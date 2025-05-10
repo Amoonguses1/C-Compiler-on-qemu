@@ -1,0 +1,10 @@
+# ubuntu images
+*.iso
+*.img
+
+# Compile-time intermediate products
+*~
+*.o
+tmp*
+a.out
+9cc
