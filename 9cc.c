@@ -1,18 +1,151 @@
+#include <ctype.h>
+#include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+// kind of tokens
+typedef enum
+{
+    TK_RESERVED, // symbols
+    TK_NUM,      // integer
+    TK_EOF,      // End of File
+} TokenKind;
+
+typedef struct Token Token;
+
+// Token Structure
+struct Token
+{
+    TokenKind kind; // a Token type
+    Token *next;    // the next token
+    int val;        // this field is used when kind == TK_NUM
+    char *str;      // the token string
+};
+
+// current target token
+Token *token;
+
+// error report function
+void error(char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    exit(1);
+}
+
+// if the next token equals the expected token,
+// go to the next token and return true.
+// Otherwise, return false.
+bool consume(char op)
+{
+    if (token->kind != TK_RESERVED || token->str[0] != op)
+        return false;
+    token = token->next;
+    return true;
+}
+
+// if the next token equals the expected symbol, consume a token.
+// Otherwise Report error.
+void expect(char op)
+{
+    if (token->kind != TK_RESERVED || token->str[0] != op)
+        error("'%c' expected, but got other", op);
+    token = token->next;
+}
+
+// If the current token is an integer type, consume the token and return the value.
+// Otherwise Report error.
+int expect_number()
+{
+    if (token->kind != TK_NUM)
+        error("expected number");
+    int val = token->val;
+    token = token->next;
+    return val;
+}
+
+bool at_eof()
+{
+    return token->kind == TK_EOF;
+}
+
+// generate a new token
+Token *new_token(TokenKind kind, Token *cur, char *str)
+{
+    Token *tok = calloc(1, sizeof(Token));
+    tok->kind = kind;
+    tok->str = str;
+    cur->next = tok;
+    return tok;
+}
+
+Token *tokenize(char *p)
+{
+    Token head;
+    head.next = NULL;
+    Token *cur = &head;
+
+    while (*p)
+    {
+        if (isspace(*p))
+        {
+            p++;
+            continue;
+        }
+
+        if (*p == '+' || *p == '-')
+        {
+            cur = new_token(TK_RESERVED, cur, p++);
+            continue;
+        }
+
+        if (isdigit(*p))
+        {
+            cur = new_token(TK_NUM, cur, p);
+            cur->val = strtol(p, &p, 10);
+            continue;
+        }
+
+        error("failed to tokenize");
+    }
+
+    new_token(TK_EOF, cur, p);
+    return head.next;
+}
 
 int main(int argc, char **argv)
 {
     if (argc != 2)
     {
-        fprintf(stderr, "引数の個数が正しくありません\n");
+        error("invalid argument");
         return 1;
     }
+
+    // tokenize
+    token = tokenize(argv[1]);
 
     printf(".intel_syntax noprefix\n");
     printf(".globl main\n");
     printf("main:\n");
-    printf("  mov rax, %d\n", atoi(argv[1]));
+
+    printf("  mov rax, %d\n", expect_number());
+
+    while (!at_eof())
+    {
+        if (consume('+'))
+        {
+            printf("  add rax, %d\n", expect_number());
+            continue;
+        }
+
+        expect('-');
+        printf("  sub rax, %d\n", expect_number());
+    }
+
     printf("  ret\n");
     return 0;
 }
