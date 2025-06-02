@@ -47,15 +47,16 @@ extern Token *token;
 
 typedef enum
 {
-    ND_ADD, // +
-    ND_SUB, // -
-    ND_MUL, // *
-    ND_DIV, // /
-    ND_NUM, // Integer
-    ND_EQ,  // "=="
-    ND_NE,  // "!="
-    ND_LT,  // "<"
-    ND_LE,  // "<="
+    ND_ADD,    // +
+    ND_SUB,    // -
+    ND_MUL,    // *
+    ND_DIV,    // /
+    ND_NUM,    // Integer
+    ND_EQ,     // "=="
+    ND_NE,     // "!="
+    ND_LT,     // "<"
+    ND_LE,     // "<="
+    ND_RETURN, // "return"
 } NodeKind;
 
 // AST node type
