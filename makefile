@@ -27,7 +27,7 @@ create_img:
 	qemu-img create -f qcow2 ubuntu-intel.img 20G
 
 
-CFLAGS=-std=c11 -g -static
+CFLAGS=-std=c11 -g -static -Wall
 SRCS=$(wildcard *.c)
 OBJS=$(SRCS:.c=.o)
 
