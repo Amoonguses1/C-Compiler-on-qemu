@@ -1,0 +1,133 @@
+#include "9cc.h"
+
+char *user_input;
+Token *token;
+
+// error report function
+void error(char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    exit(1);
+}
+
+// report errors
+void error_at(char *loc, char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+
+    int pos = loc - user_input;
+    fprintf(stderr, "%s\n", user_input);
+    fprintf(stderr, "%*s", pos, " ");
+    fprintf(stderr, "^ ");
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    exit(1);
+}
+
+// if the next token equals the expected token,
+// go to the next token and return true.
+// Otherwise, return false.
+bool consume(char *op)
+{
+    if (token->kind != TK_RESERVED ||
+        strlen(op) != token->len ||
+        strncmp(token->str, op, token->len))
+        return false;
+    token = token->next;
+    return true;
+}
+
+// if the next token equals the expected symbol, consume a token.
+// Otherwise Report error.
+void expect(char *op)
+{
+    if (token->kind != TK_RESERVED ||
+        strlen(op) != token->len ||
+        strncmp(token->str, op, token->len))
+        error_at(token->str, "expected, but got other", op);
+    token = token->next;
+}
+
+// If the current token is an integer type, consume the token and return the value.
+// Otherwise Report error.
+int expect_number()
+{
+    if (token->kind != TK_NUM)
+        error_at(token->str, "expected number");
+    int val = token->val;
+    token = token->next;
+    return val;
+}
+
+bool at_eof()
+{
+    return token->kind == TK_EOF;
+}
+
+bool startswith(char *p, char *q)
+{
+    return memcmp(p, q, strlen(q)) == 0;
+}
+
+// generate a new token
+Token *new_token(TokenKind kind, Token *cur, char *str, int len)
+{
+    Token *tok = calloc(1, sizeof(Token));
+    tok->kind = kind;
+    tok->str = str;
+    tok->len = len;
+    cur->next = tok;
+    return tok;
+}
+
+Token *tokenize()
+{
+    char *p = user_input;
+    Token head;
+    head.next = NULL;
+    Token *cur = &head;
+
+    while (*p)
+    {
+        if (isspace(*p))
+        {
+            p++;
+            continue;
+        }
+
+        // Multi-letter punctuator
+        if (startswith(p, "==") || startswith(p, "!=") ||
+            startswith(p, "<=") || startswith(p, ">="))
+        {
+            cur = new_token(TK_RESERVED, cur, p, 2);
+            p += 2;
+            continue;
+        }
+
+        // Single-letter punctuator
+
+        if (strchr("+-*/()<>", *p))
+        {
+            cur = new_token(TK_RESERVED, cur, p++, 1);
+            continue;
+        }
+
+        if (isdigit(*p))
+        {
+            cur = new_token(TK_NUM, cur, p, 0);
+            char *q = p;
+            cur->val = strtol(p, &p, 10);
+            cur->len = p - q;
+            continue;
+        }
+
+        error_at(p, "invalid token");
+    }
+
+    new_token(TK_EOF, cur, p, 0);
+    return head.next;
+}
