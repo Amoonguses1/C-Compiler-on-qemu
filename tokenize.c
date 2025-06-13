@@ -28,6 +28,14 @@ void error_at(char *loc, char *fmt, ...)
     exit(1);
 }
 
+char *strndup(char *p, int len)
+{
+    char *buf = malloc(len + 1);
+    strncpy(buf, p, len);
+    buf[len] = '\0';
+    return buf;
+}
+
 // if the next token equals the expected token,
 // go to the next token and return true.
 // Otherwise, return false.
@@ -58,7 +66,7 @@ void expect(char *op)
     if (token->kind != TK_RESERVED ||
         strlen(op) != token->len ||
         strncmp(token->str, op, token->len))
-        error_at(token->str, "expected, but got other", op);
+        error_at(token->str, "expected %s, but got other", op);
     token = token->next;
 }
 
@@ -143,9 +151,14 @@ Token *tokenize()
             continue;
         }
 
-        if ('a' <= *p && *p <= 'z')
+        if (is_alpha(*p))
         {
-            cur = new_token(TK_IDENT, cur, p++, 1);
+            char *q = p;
+            while (is_alnum(*p))
+            {
+                p++;
+            }
+            cur = new_token(TK_IDENT, cur, q, p - q);
             continue;
         }
 

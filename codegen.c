@@ -2,10 +2,9 @@
 
 void gen_addr(Node *node)
 {
-    if (node->kind == ND_LVAR)
+    if (node->kind == ND_VAR)
     {
-        int offset = (node->name - 'a' + 1) * 8;
-        printf("  lea rax, [rbp-%d]\n", offset);
+        printf("  lea rax, [rbp-%d]\n", node->var->offset);
         printf("  push rax\n");
         return;
     }
@@ -39,7 +38,7 @@ void gen(Node *node)
         gen(node->lhs);
         printf("  add rsp, 8\n");
         return;
-    case ND_LVAR:
+    case ND_VAR:
         gen_addr(node);
         load();
         return;
@@ -101,7 +100,7 @@ void gen(Node *node)
     printf("  push rax\n");
 }
 
-void codegen(Node *node)
+void codegen(Program *prog)
 {
     // Print out the first half of assembly.
     printf(".intel_syntax noprefix\n");
@@ -111,10 +110,10 @@ void codegen(Node *node)
     // Prologue
     printf("  push rbp\n");
     printf("  mov rbp, rsp\n");
-    printf("  sub rsp, 208\n");
+    printf("  sub rsp, %d\n", prog->stack_size);
 
     // Traverse the AST to emit assembly.
-    for (Node *n = node; n; n = n->next)
+    for (Node *n = prog->node; n; n = n->next)
     {
         gen(n);
     }
