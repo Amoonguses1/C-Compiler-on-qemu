@@ -60,6 +60,7 @@ typedef enum
     ND_LT,             // "<"
     ND_LE,             // "<="
     ND_IF,             // "if"
+    ND_WHILE,          // "while"
     ND_ASSIGN,         // =
     ND_RETURN,         // "return"
     ND_EXPR_STATEMENT, // expression statement
@@ -85,7 +86,7 @@ struct Node
     Node *lhs; // Left-hand side
     Node *rhs; // Right-hand side
 
-    // "if" statement
+    // "if" or "while" statement
     Node *cond;
     Node *then;
     Node *els;
