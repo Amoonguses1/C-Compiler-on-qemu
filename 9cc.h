@@ -61,6 +61,7 @@ typedef enum
     ND_LE,             // "<="
     ND_IF,             // "if"
     ND_WHILE,          // "while"
+    ND_FOR,            // "for"
     ND_ASSIGN,         // =
     ND_RETURN,         // "return"
     ND_EXPR_STATEMENT, // expression statement
@@ -86,10 +87,12 @@ struct Node
     Node *lhs; // Left-hand side
     Node *rhs; // Right-hand side
 
-    // "if" or "while" statement
+    // "if", "while" or "for" statement
     Node *cond;
     Node *then;
     Node *els;
+    Node *init;
+    Node *inc;
 
     Var *var; // Used if kind == ND_VAR
     int val;  // Used if kind == ND_NUM
