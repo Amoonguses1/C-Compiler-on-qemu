@@ -59,6 +59,7 @@ typedef enum
     ND_NE,             // "!="
     ND_LT,             // "<"
     ND_LE,             // "<="
+    ND_IF,             // "if"
     ND_ASSIGN,         // =
     ND_RETURN,         // "return"
     ND_EXPR_STATEMENT, // expression statement
@@ -80,10 +81,17 @@ struct Node
 {
     NodeKind kind; // Node kind
     Node *next;    // next node
-    Node *lhs;     // Left-hand side
-    Node *rhs;     // Right-hand side
-    Var *var;      // Used if kind == ND_VAR
-    int val;       // Used if kind == ND_NUM
+
+    Node *lhs; // Left-hand side
+    Node *rhs; // Right-hand side
+
+    // "if" statement
+    Node *cond;
+    Node *then;
+    Node *els;
+
+    Var *var; // Used if kind == ND_VAR
+    int val;  // Used if kind == ND_NUM
 };
 
 typedef struct
