@@ -66,6 +66,7 @@ typedef enum
     ND_ASSIGN,         // =
     ND_RETURN,         // "return"
     ND_EXPR_STATEMENT, // expression statement
+    ND_FUNCALL,        // function call
     ND_VAR,            // variable
 } NodeKind;
 
@@ -97,6 +98,9 @@ struct Node
 
     // Block
     Node *body;
+
+    // Function call
+    char *funcname;
 
     Var *var; // Used if kind == ND_VAR
     int val;  // Used if kind == ND_NUM
