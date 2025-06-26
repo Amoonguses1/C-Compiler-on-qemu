@@ -1,6 +1,7 @@
 #include "9cc.h"
 
 int labelseq = 0;
+char *funcname;
 char *argreg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 void gen_addr(Node *node)
@@ -127,14 +128,29 @@ void gen(Node *node)
             printf("  pop %s\n", argreg[i]);
         }
 
-        printf(" call %s\n", node->funcname);
+        // We need to align RSP to a 16 byte boundary before
+        // calling a function because it is an ABI requirement.
+        // RAX is set to 0 for variadic function.
+        int seq = labelseq++;
+        printf("  mov rax, rsp\n");
+        printf("  and rax, 15\n");
+        printf("  jnz .Lcall%d\n", seq);
+        printf("  mov rax, 0\n");
+        printf("  call %s\n", node->funcname);
+        printf("  jmp .Lend%d\n", seq);
+        printf(".Lcall%d:\n", seq);
+        printf("  sub rsp, 8\n");
+        printf("  mov rax, 0\n");
+        printf("  call %s\n", node->funcname);
+        printf("  add rsp, 8\n");
+        printf(".Lend%d:\n", seq);
         printf(" push rax\n");
         return;
     }
     case ND_RETURN:
         gen(node->lhs);
         printf("  pop rax\n");
-        printf("  jmp .Lreturn\n");
+        printf("  jmp .Lreturn.%s\n", funcname);
         return;
     }
 
@@ -184,27 +200,29 @@ void gen(Node *node)
     printf("  push rax\n");
 }
 
-void codegen(Program *prog)
+void codegen(Function *prog)
 {
     // Print out the first half of assembly.
     printf(".intel_syntax noprefix\n");
-    printf(".globl main\n");
-    printf("main:\n");
-
-    // Prologue
-    printf("  push rbp\n");
-    printf("  mov rbp, rsp\n");
-    printf("  sub rsp, %d\n", prog->stack_size);
-
-    // Traverse the AST to emit assembly.
-    for (Node *n = prog->node; n; n = n->next)
+    for (Function *fn = prog; fn; fn = fn->next)
     {
-        gen(n);
-    }
+        printf(".global %s\n", fn->name);
+        printf("%s:\n", fn->name);
+        funcname = fn->name;
 
-    // Epilogue
-    printf(".Lreturn:\n");
-    printf("  mov rsp, rbp\n");
-    printf("  pop rbp\n");
-    printf("  ret\n");
+        // Prologue
+        printf("  push rbp\n");
+        printf("  mov rbp, rsp\n");
+        printf("  sub rsp, %d\n", fn->stack_size);
+
+        // Emit code
+        for (Node *node = fn->node; node; node = node->next)
+            gen(node);
+
+        // Epilogue
+        printf(".Lreturn.%s:\n", funcname);
+        printf("  mov rsp, rbp\n");
+        printf("  pop rbp\n");
+        printf("  ret\n");
+    }
 }
