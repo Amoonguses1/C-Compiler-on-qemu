@@ -6,27 +6,26 @@
 #include <string.h>
 
 //
-// Tokenizer
+// tokenize.c
 //
 
-// kind of tokens
+// Token
 typedef enum
 {
-    TK_RESERVED, // symbols
-    TK_IDENT,    // identifiers
-    TK_NUM,      // integer
-    TK_EOF,      // End of File
+    TK_RESERVED, // Keywords or punctuators
+    TK_IDENT,    // Identifiers
+    TK_NUM,      // Integer literals
+    TK_EOF,      // End-of-file markers
 } TokenKind;
 
+// Token type
 typedef struct Token Token;
-
-// Token Structure
 struct Token
 {
-    TokenKind kind; // a Token type
-    Token *next;    // the next token
-    int val;        // this field is used when kind == TK_NUM
-    char *str;      // the token string
+    TokenKind kind; // Token kind
+    Token *next;    // Next token
+    int val;        // If kind is TK_NUM, its value
+    char *str;      // Token string
     int len;        // Token length
 };
 
@@ -46,51 +45,58 @@ extern char *user_input;
 extern Token *token;
 
 //
-// Parser
+// parse.c
 //
-
-typedef enum
-{
-    ND_ADD,            // +
-    ND_SUB,            // -
-    ND_MUL,            // *
-    ND_DIV,            // /
-    ND_NUM,            // Integer
-    ND_EQ,             // "=="
-    ND_NE,             // "!="
-    ND_LT,             // "<"
-    ND_LE,             // "<="
-    ND_IF,             // "if"
-    ND_WHILE,          // "while"
-    ND_FOR,            // "for"
-    ND_BLOCK,          // { ... }
-    ND_ASSIGN,         // =
-    ND_RETURN,         // "return"
-    ND_EXPR_STATEMENT, // expression statement
-    ND_FUNCALL,        // function call
-    ND_VAR,            // variable
-} NodeKind;
 
 // Local variable
 typedef struct Var Var;
 struct Var
 {
-    Var *next;
-    char *name; // variable name
-    int offset; // offset from RBP
+    char *name; // Variable name
+    int offset; // Offset from RBP
 };
+
+typedef struct VarList VarList;
+struct VarList
+{
+    VarList *next;
+    Var *var;
+};
+
+// AST node
+typedef enum
+{
+    ND_ADD,       // +
+    ND_SUB,       // -
+    ND_MUL,       // *
+    ND_DIV,       // /
+    ND_EQ,        // ==
+    ND_NE,        // !=
+    ND_LT,        // <
+    ND_LE,        // <=
+    ND_ASSIGN,    // =
+    ND_RETURN,    // "return"
+    ND_IF,        // "if"
+    ND_WHILE,     // "while"
+    ND_FOR,       // "for"
+    ND_BLOCK,     // { ... }
+    ND_FUNCALL,   // Function call
+    ND_EXPR_STMT, // Expression statement
+    ND_VAR,       // Variable
+    ND_NUM,       // Integer
+} NodeKind;
 
 // AST node type
 typedef struct Node Node;
 struct Node
 {
     NodeKind kind; // Node kind
-    Node *next;    // next node
+    Node *next;    // Next node
 
     Node *lhs; // Left-hand side
     Node *rhs; // Right-hand side
 
-    // "if", "while" or "for" statement
+    // "if, "while" or "for" statement
     Node *cond;
     Node *then;
     Node *els;
@@ -113,15 +119,17 @@ struct Function
 {
     Function *next;
     char *name;
+    VarList *params;
+
     Node *node;
-    Var *locals;
+    VarList *locals;
     int stack_size;
 };
 
 Function *program();
 
 //
-// codegen
+// codegen.c
 //
 
 void codegen(Function *prog);

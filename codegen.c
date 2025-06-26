@@ -1,9 +1,11 @@
 #include "9cc.h"
 
-int labelseq = 0;
-char *funcname;
 char *argreg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
+int labelseq = 0;
+char *funcname;
+
+// Pushes the given node's address to the stack.
 void gen_addr(Node *node)
 {
     if (node->kind == ND_VAR)
@@ -31,6 +33,7 @@ void store()
     printf("  push rdi\n");
 }
 
+// Generate code for a given node.
 void gen(Node *node)
 {
     switch (node->kind)
@@ -38,7 +41,7 @@ void gen(Node *node)
     case ND_NUM:
         printf("  push %d\n", node->val);
         return;
-    case ND_EXPR_STATEMENT:
+    case ND_EXPR_STMT:
         gen(node->lhs);
         printf("  add rsp, 8\n");
         return;
@@ -124,9 +127,7 @@ void gen(Node *node)
         }
 
         for (int i = nargs - 1; i >= 0; i--)
-        {
             printf("  pop %s\n", argreg[i]);
-        }
 
         // We need to align RSP to a 16 byte boundary before
         // calling a function because it is an ABI requirement.
@@ -144,7 +145,7 @@ void gen(Node *node)
         printf("  call %s\n", node->funcname);
         printf("  add rsp, 8\n");
         printf(".Lend%d:\n", seq);
-        printf(" push rax\n");
+        printf("  push rax\n");
         return;
     }
     case ND_RETURN:
@@ -202,8 +203,8 @@ void gen(Node *node)
 
 void codegen(Function *prog)
 {
-    // Print out the first half of assembly.
     printf(".intel_syntax noprefix\n");
+
     for (Function *fn = prog; fn; fn = fn->next)
     {
         printf(".global %s\n", fn->name);
@@ -214,6 +215,14 @@ void codegen(Function *prog)
         printf("  push rbp\n");
         printf("  mov rbp, rsp\n");
         printf("  sub rsp, %d\n", fn->stack_size);
+
+        // Push arguments to the stack
+        int i = 0;
+        for (VarList *vl = fn->params; vl; vl = vl->next)
+        {
+            Var *var = vl->var;
+            printf("  mov [rbp-%d], %s\n", var->offset, argreg[i++]);
+        }
 
         // Emit code
         for (Node *node = fn->node; node; node = node->next)
