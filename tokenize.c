@@ -14,15 +14,33 @@ void error(char *fmt, ...)
 }
 
 // report errors
-void error_at(char *loc, char *fmt, ...)
+void verror_at(char *loc, char *fmt, va_list ap)
 {
-    va_list ap;
-    va_start(ap, fmt);
-
     int pos = loc - user_input;
     fprintf(stderr, "%s\n", user_input);
     fprintf(stderr, "%*s", pos, " ");
     fprintf(stderr, "^ ");
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    exit(1);
+}
+
+// Reports an error location and exit.
+void error_at(char *loc, char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    verror_at(loc, fmt, ap);
+}
+
+// Reports an error location and exit.
+void error_tok(Token *tok, char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    if (tok)
+        verror_at(tok->str, fmt, ap);
+
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
     exit(1);
@@ -37,16 +55,17 @@ char *strndup(char *p, int len)
 }
 
 // if the next token equals the expected token,
-// go to the next token and return true.
-// Otherwise, return false.
-bool consume(char *op)
+// go to the next token and return current token.
+// Otherwise, return NULL.
+Token *consume(char *op)
 {
     if (token->kind != TK_RESERVED ||
         strlen(op) != token->len ||
         strncmp(token->str, op, token->len))
-        return false;
+        return NULL;
+    Token *t = token;
     token = token->next;
-    return true;
+    return t;
 }
 
 // Consumes the current token if it is an identifier.
@@ -66,7 +85,7 @@ void expect(char *op)
     if (token->kind != TK_RESERVED ||
         strlen(op) != token->len ||
         strncmp(token->str, op, token->len))
-        error_at(token->str, "expected %s, but got other", op);
+        error_tok(token, "expected %s, but got other", op);
     token = token->next;
 }
 
@@ -75,7 +94,7 @@ void expect(char *op)
 int expect_number()
 {
     if (token->kind != TK_NUM)
-        error_at(token->str, "expected number");
+        error_tok(token, "expected number");
     int val = token->val;
     token = token->next;
     return val;
@@ -85,7 +104,7 @@ int expect_number()
 char *expect_ident()
 {
     if (token->kind != TK_IDENT)
-        error_at(token->str, "expected an identifier");
+        error_tok(token, "expected an identifier");
     char *s = strndup(token->str, token->len);
     token = token->next;
     return s;
