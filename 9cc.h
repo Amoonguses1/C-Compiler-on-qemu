@@ -84,6 +84,7 @@ typedef enum
     ND_RETURN,    // "return"
     ND_IF,        // "if"
     ND_WHILE,     // "while"
+    ND_SIZEOF,    // "sizeof"
     ND_FOR,       // "for"
     ND_BLOCK,     // { ... }
     ND_FUNCALL,   // Function call
