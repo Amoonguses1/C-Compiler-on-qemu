@@ -57,9 +57,12 @@ extern Token *token;
 typedef struct Var Var;
 struct Var
 {
-    char *name; // Variable name
+    char *name;    // Variable name
+    Type *ty;      // Type
+    bool is_local; // local or global
+
+    // Local variable
     int offset; // Offset from RBP
-    Type *ty;   // Type
 };
 
 typedef struct VarList VarList;
@@ -138,7 +141,13 @@ struct Function
     int stack_size;
 };
 
-Function *program();
+typedef struct
+{
+    VarList *globals;
+    Function *fns;
+} Program;
+
+Program *program();
 
 //
 // typing.c
@@ -162,10 +171,10 @@ Type *int_type();
 Type *pointer_to(Type *base);
 Type *array_of(Type *base, int size);
 int size_of(Type *ty);
-void add_type(Function *prog);
+void add_type(Program *prog);
 
 //
 // codegen.c
 //
 
-void codegen(Function *prog);
+void codegen(Program *prog);
