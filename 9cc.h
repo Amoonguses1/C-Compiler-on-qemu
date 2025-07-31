@@ -157,7 +157,8 @@ typedef enum
 {
     TY_INT,
     TY_PTR,
-    TY_ARRAY
+    TY_ARRAY,
+    TY_CHAR,
 } TypeKind;
 
 struct Type
@@ -167,6 +168,7 @@ struct Type
     int array_size;
 };
 
+Type *char_type();
 Type *int_type();
 Type *pointer_to(Type *base);
 Type *array_of(Type *base, int size);
